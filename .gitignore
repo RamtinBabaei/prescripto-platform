@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.deploy/
+.wrangler/
+.dev.vars
+.env
+*.zip
+coverage/
+.qa/

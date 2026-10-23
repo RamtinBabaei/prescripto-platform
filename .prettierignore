@@ -1,0 +1,7 @@
+node_modules
+dist
+.deploy
+.qa
+.wrangler
+worker-configuration.d.ts
+package-lock.json

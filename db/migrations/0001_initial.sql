@@ -1,0 +1,14 @@
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,name TEXT NOT NULL,email TEXT NOT NULL UNIQUE COLLATE NOCASE,password_hash TEXT NOT NULL,role TEXT NOT NULL DEFAULT 'patient' CHECK(role IN ('patient','doctor','admin')),phone TEXT NOT NULL DEFAULT '',address TEXT NOT NULL DEFAULT '',gender TEXT NOT NULL DEFAULT '',dob TEXT NOT NULL DEFAULT '',created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,expires_at INTEGER NOT NULL);
+CREATE INDEX IF NOT EXISTS sessions_expiry ON sessions(expires_at);
+CREATE TABLE IF NOT EXISTS doctors(id TEXT PRIMARY KEY,user_id TEXT UNIQUE REFERENCES users(id),name TEXT NOT NULL,speciality TEXT NOT NULL,degree TEXT NOT NULL,experience INTEGER NOT NULL CHECK(experience>=0),about TEXT NOT NULL,fee INTEGER NOT NULL CHECK(fee>0),image TEXT NOT NULL,address TEXT NOT NULL,available INTEGER NOT NULL DEFAULT 1 CHECK(available IN (0,1)));
+CREATE INDEX IF NOT EXISTS doctor_speciality ON doctors(speciality);
+CREATE TABLE IF NOT EXISTS appointments(id TEXT PRIMARY KEY,patient_id TEXT NOT NULL REFERENCES users(id),doctor_id TEXT NOT NULL REFERENCES doctors(id),slot TEXT NOT NULL,fee INTEGER NOT NULL,status TEXT NOT NULL DEFAULT 'booked' CHECK(status IN ('booked','cancelled','completed')),payment TEXT NOT NULL DEFAULT 'clinic' CHECK(payment IN ('clinic','pending','paid')),stripe_session TEXT,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE UNIQUE INDEX IF NOT EXISTS unique_active_slot ON appointments(doctor_id,slot) WHERE status!='cancelled';
+CREATE UNIQUE INDEX IF NOT EXISTS patient_active_slot ON appointments(patient_id,slot) WHERE status!='cancelled';
+CREATE INDEX IF NOT EXISTS patient_appointments ON appointments(patient_id,slot);
+CREATE INDEX IF NOT EXISTS doctor_appointments ON appointments(doctor_id,slot);
+CREATE TABLE IF NOT EXISTS rate_limits(key TEXT PRIMARY KEY,count INTEGER NOT NULL,expires_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS audit_log(id TEXT PRIMARY KEY,actor_id TEXT NOT NULL,action TEXT NOT NULL,entity_id TEXT NOT NULL,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
+CREATE TABLE IF NOT EXISTS webhook_events(id TEXT PRIMARY KEY,created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP);
